@@ -73,18 +73,10 @@ class Ships_Placer
 
 	attr_reader :ships
 	def initialize(ships_cfg)
+		make_grid
 		@ships_cfg = ships_cfg
 		@ships = Ships.new
 		@ships_added = []
-		@grid = Grid.new
-	end
-
-	def board
-		@grid.board
-	end
-
-	def view_board
-		@grid.view_board
 	end
 
 	def place
@@ -131,7 +123,7 @@ class Ships_Placer
 
 		puts "When done, type 'done'"
 
-		view_board
+		view_grid
 	end
 
 	def add_ship(input)
@@ -208,7 +200,7 @@ class Ships_Placer
 	def mark_coords(coords, marking)
 		
 		coords.each do |coord|
-			board[coord[0]][coord[1]] = marking
+			grid[coord[0]][coord[1]] = marking
 		end
 	end
 

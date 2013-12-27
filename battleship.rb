@@ -20,6 +20,15 @@ end
 class DuplicateShotsException < Exception
 end
 
+def ships_conf
+ [{name: 'Carrier', length: 5, quantity: 1},
+						 {name: 'Battleship', length: 4, quantity: 1},
+						 {name: 'Steamboat', length: 3, quantity: 1},
+						 {name: 'Destroyer', length: 2, quantity: 2},
+						 {name: 'Submarine', length: 1, quantity: 2},
+						]
+end
+
 class Ship
 	attr_reader :name, :coords, :length
 
@@ -73,7 +82,7 @@ end
 
 
 
-class Board
+class Fleet
 	attr_reader :hits, :sunk
 
 	def initialize(ships)
@@ -121,42 +130,23 @@ class Board
 
 end
 
-class Offense_Board
-	attr_accessor :enemy_board
-	attr_reader :grid, :sunk
+class Attack_Grid
+	attr_reader :sunk
 	include GridView
 
-	def initialize(enemy_board = nil)
-		@grid = Grid.new
+	def initialize
+		make_grid
 		@sunk = []
 	end
 
-	def board
-		@grid.board
-	end
-
-	def view_board
-		@grid.view_board
-	end
-
-	def shoot(coord)
-		result = take_shot(coord)
-		mark_result(result)
-		result
-	end
-
 	def get_coord(coord)
-		board[coord[0]][coord[1]]
+		@grid[coord[0]][coord[1]]
 	end
 
 	def mark_result(result)
 		coord = result[:coord]
-		board[coord[0]][coord[1]] = result[:result]
+		@grid[coord[0]][coord[1]] = result[:result]
 		@sunk.push([result[:sunk], coord]) if !!result[:sunk]
-	end
-
-	def take_shot(coord)
-		@enemy_board.get_shot(coord)
 	end
 
 	def already_shot(coord)
@@ -164,94 +154,138 @@ class Offense_Board
 	end
 end
 
-class Player
-	attr_reader :board, :offense_board, :name
+class Combatant
+	attr_reader :fleet, :attack_grid, :name
 
-	def initialize(ships, name)
-		@board = Board.new(ships)
-		@offense_board = Offense_Board.new
+	def initialize(ships)
+		@fleet = Fleet.new(ships)
+		@attack_grid = Attack_Grid.new
 		@name = name
 	end
 
 	def set_enemy(enemy)
-		@offense_board.enemy_board = enemy
+		@enemy = enemy.fleet
 	end
 
 	def shots_count
-		@board.number_of_ships - @board.sunk
+		@fleet.number_of_ships - @fleet.sunk
+	end
+
+	def shots_left
+		@attack_grid.shots_left
 	end
 
 	def volley(coords)
-		raise TooManyShotsException.new if coords.length > shots_count
-		raise TooFewShotsException.new if coords.length < shots_count
-		raise DuplicateShotsException.new if coords.uniq != coords
-		raise AlreadyShotException.new if coords.any? {|coord| @offense_board.already_shot(coord)}
-		coords.collect { |coord| shoot(coord)}
+		results = coords.collect { |coord| shoot(coord)}
+		results.each { |result| mark_result(result) }
+		results
 	end
 
-	def shoot(coords)
-		@offense_board.shoot(coords)
-	end
-end
-
-class Game
-	attr_reader :player1, :player2, :players, :turn
-	include CoordTranslator
-
-	def initialize
-		
-
-		placer = Ships_Placer.new(ships_conf)
-		placer.place
-		@player1 = Human_Front_End.new(Player.new(placer.ships, 'Ben'))
-		@player1.player.set_enemy(@player2.player.board)
-		@player2.player.set_enemy(@player1.player.board)
-		@turn = @player1
+	def shoot(coord)
+		@enemy.get_shot(coord)
 	end
 
-	def start_game
-		game_on = true
-		
-		while game_on
-			
-			@turn.turn
-			game_on = false if @turn.offense_board.enemy_board.sunk == @turn.offense_board.enemy_board.number_of_ships
-			@turn == @player1? @turn = @player2 : @turn = @player1
-		end
-
-		puts "#{@turn} wins"
+	def mark_result(result)
+		@attack_grid.mark_result(result)
 	end
 
-	def check_over(board)
-		board.hits.sort == board.coords.sort
+	def won?
+		@attack_grid.sunk.length == @fleet.number_of_ships
 	end
 
-	def process_volley_results(results)
-		hit_miss = {"H" => "hit", "M" => "miss"}
-
-		results.each do |result|
-			puts from_coord(result[:coord]) + ":  " + hit_miss[result[:result]]
-			puts "Sunk " + result[:sunk] if result[:sunk]
-		end
+	def already_shot(volley)
+		volley.select { |shot| @attack_grid.already_shot(shot)}
 	end
 end
 
-class Computer_Front_End
-	attr_reader :player, :offense_board
-	include CoordTranslator
-	def initialize(player)
-		@player = player
-		@offense_board = @player.offense_board
+class Player
+	include VolleyResultsViewer
+
+	attr_reader :name, :combatant
+	def initialize(combatant, shot, name)
+		@combatant = combatant
+		@shot = shot
+		@name = name
 	end
 
 	def turn
-		make_shots(@player.shot_count)
-		@player.volley(shots)
+		shots = @shot.new(@combatant, @name).shots
+		results = @combatant.volley(shots)
+		view_volley_results(results, self)
 	end
 
-	def make_shots(shot_count)
+	def won?
+		@combatant.won?
+	end
+
+	def set_enemy(enemy)
+		enemy.make_enemy(@combatant)
+	end
+
+	def make_enemy(enemy_comb)
+		@combatant.set_enemy(enemy_comb)
+	end
+end
+
+class Human_Shot
+	attr_reader :shots
+	include CoordTranslator
+
+	def initialize(combatant, name)
+		@shots_count = combatant.shots_count
+		@combatant = combatant
+		@name = name
+		@combatant.attack_grid.view_grid
+		puts "#{@name}, you have #{@shots_count} shots. Shoot"
+		@shots = make_shots
+	end
+
+	def make_shots
+		shots = gets.chomp
+
+		shots = process_input(shots)
+
+		if shots.length < @shots_count && shots.length < @combatant.shots_left
+			puts "Too few shots, you have #{@shots_count} shots. Shoot again."
+	
+
+		elsif shots.length > @shots_count
+			puts "Too many shots, you only have #{@shots_count} shots. Shoot again."
+
+		elsif shots.uniq != shots
+			puts "You can't shoot the same coordinate twice in the same volley. Shoot again."
+
+		elsif @combatant.already_shot(shots) != []
+			puts "You already shot #{@combatant.already_shot(shots)}"
+
+		else
+			return shots
+		end
+
+		make_shots
+	end
+
+	def process_input(input)
+		coords = input.scan(/[A-J|a-j]10|[A-J|a-j][1-9]/)
+		coords.collect do |coord|
+			to_coord(coord)
+		end
+	end
+end
+
+class Computer_Shot
+	attr_reader :shots
+	def initialize(combatant, name)
+		@shots_count = combatant.shots_count
+		@combatant = combatant
+		@name = name
+		@shots = make_shots
+	end
+
+	def make_shots
 		shots = []
-		shot_count.times do
+
+		@shots_count.times do
 			shot = make_shot
 			while shots.include? shot
 				shot = make_shot
@@ -259,44 +293,110 @@ class Computer_Front_End
 			shots.push(shot)
 		end
 
-		shots
+		if @combatant.already_shot(shots) != []
+			make_shots
+
+		else
+			shots
+		end
 	end
 
 	def make_shot
-		coord = [rand(9), rand(9)]
+		[rand(9), rand(9)]
 	end
 end
 
-class Human_Front_End
+class Game
+	attr_reader :player1, :player2, :turn
 	include CoordTranslator
-	attr_reader :player, :offense_board
 
-	def initialize(player)
-		@player = player
-		@offense_board = @player.offense_board
+	def initialize(player1, player2)
+		@player1 = player1
+		@player2 = player2
+		@turn = @player1
 	end
-
-	def view_board
-		@offense_board.grid.view_board
-	end
-
-	def turn
-		view_board
-		puts "#{@player.name}, you have #{@player.shots_count} shots. Shoot"
+ 	
+	def start_game
+		game_on = true
 		
-		shoot = true
+		while game_on
+			@turn.turn
+			if @turn.won?
+				game_on = false 
 
-		while shoot
-			shots = gets.chomp
+			else
+				@turn == @player1 ? @turn = @player2 : @turn = @player1
+			end
+		end
 
+		puts "#{@turn.name} wins"
+	end
+end
+
+
+class Game_Setup
+	attr_reader :player1, :player2, :game
+
+	def initialize(human_name, computer_name)
+		@player1 = make_human_player(human_name)
+		@player2 = make_computer_player(computer_name)
+		@player1.set_enemy(@player2)
+		@player2.set_enemy(@player1)
+		@game = Game.new(@player1, @player2)
+	end
+
+	def make_human_player(name)
+		comb = Combatant.new(make_computer_ships)
+		Player.new(comb, Human_Shot, name)
+	end
+
+	def make_computer_player(name)
+		comb = Combatant.new(make_computer_ships)
+		Player.new(comb, Computer_Shot, name)
+	end
+
+	def make_human_ships
+		placer = Ships_Placer.new(ships_conf)
+		placer.place
+		placer.ships
+	end
+
+	def make_computer_ships
+		Ships_Maker.new(ships_conf).ships
+	end
+
+	def start_game
+		@game.start_game
+	end
+
+end
+
+
+puts "Welcome to Battleship."
+puts "Type your name to start playing."
+name = gets.chomp
+game_setup = Game_Setup.new(name, 'Benito M.')
+
+puts "Goodbye."
+
+
+=begin
+	FROM volley()
+	raise TooManyShotsException.new if coords.length > shots_count
+		raise TooFewShotsException.new if coords.length < shots_count
+		raise DuplicateShotsException.new if coords.uniq != coords
+		raise AlreadyShotException.new if coords.any? {|coord| @attack_grid.already_shot(coord)}
+=end
+
+=begin
 			begin 
-				result = @player.volley(process_input(shots))
+				results = @combatant.volley(process_input(shots))
 
 			rescue TooFewShotsException
-				puts "Too few shots, you have #{@player.shots_count} shots. Shoot again."
+				puts "Too few shots, you have #{@combatant.shots_count} shots. Shoot again."
 
 			rescue TooManyShotsException
-				puts "Too many shots, you only have #{@player.shots_count} shots. Shoot again."
+				puts "Too many shots, you only have #{@combatant.shots_count} shots. Shoot again."
 
 			rescue DuplicateShotsException
 				puts "You can't shoot the same coordinate twice in the same volley. Shoot again."
@@ -306,34 +406,8 @@ class Human_Front_End
 
 			else
 				shoot = false
+				view_volley_results(results, self)
 			end
 		end
-
-		result
 	end
-
-
-	def process_input(input)
-		coords = input.scan(/[A-J|a-j]10|[A-J|a-j][1-9]/)
-		coords.collect do |coord|
-			to_coord(coord)
-		end
-	end
-
-end
-			
-
-def make_computer_player
-	computer_ships = Ships_Maker.new(ships_conf).ships
-	computer_player = Player.new(computer_ships, 'Comp')
-	computer_front_end = Computer_Front_End.new(computer_player)
-end
-
-def ships_conf
- [{name: 'Carrier', length: 5, quantity: 1},
-						 {name: 'Battleship', length: 4, quantity: 1},
-						 {name: 'Steamboat', length: 3, quantity: 1},
-						 {name: 'Destroyer', length: 2, quantity: 2},
-						 {name: 'Submarine', length: 1, quantity: 2},
-						]
-end
+=end
