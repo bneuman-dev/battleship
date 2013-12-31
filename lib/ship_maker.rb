@@ -1,92 +1,65 @@
-require_relative 'exceptions'
+require_relative 'setup'
 
 Ship = Struct.new(:name, :length, :coords)
 
 class Ship_Maker
-	attr_reader :ship
+  attr_reader :ship
 
-	def initialize(ship_cfg, occupied_coords)
-		@ship_cfg = ship_cfg
-		@occupied_coords = occupied_coords
-		validate_ship
-		coords = set_coords
-		@ship = Ship.new(@ship_cfg[:name], @ship_cfg[:length], coords)
-	end
+  def initialize(ship_cfg)
+    @ship_cfg = ship_cfg
+    @coord1 = ship_cfg[:coord1]
+    @coord2 = ship_cfg[:coord2]
+    @length = ship_cfg[:length]
 
-	def set_coords
-		coords = make_coords(@ship_cfg[:coord1], @ship_cfg[:coord2])
-		if bad_coords? (coords)
-			raise BadShipCoordsException 
+    raise InvalidShipException if !valid?
+    coords = make_coords
+    @ship = Ship.new(@ship_cfg[:name], @ship_cfg[:length], coords)
+  end
 
-		else
-			return coords
-		end
-	end
+  def make_coords
 
-	def bad_coords? (coords)
-		coords.any? { |ship_coord| @occupied_coords.include? ship_coord }
-	end
+    coord1x, coord1y = @coord1
+    coord2x, coord2y = @coord2
 
-	def make_coords(coord1, coord2)
+    if coord1x < coord2x
+      (coord1x..coord2x).collect {|x| [x, coord1y]}
 
-		coord1a, coord1b = coord1
-		coord2a, coord2b = coord2
+    elsif coord2x < coord1x
+      (coord2x..coord1x).collect {|x| [x, coord1y]}
 
-		if coord1a < coord2a
-			(coord1a..coord2a).collect {|x| [x, coord1b]}
+    elsif coord1y < coord2y
+      (coord1y..coord2y).collect {|y| [coord1x, y]}
 
-		elsif coord2a < coord1a
-			(coord2a..coord1a).collect {|x| [x, coord1b]}
+    elsif coord2y < coord1y
+      (coord2y..coord1y).collect {|y| [coord1x, y]}
 
-		elsif coord1b < coord2b
-			(coord1b..coord2b).collect {|y| [coord1a, y]}
+    else
+      [@coord1]
+    end
+  end
 
-		elsif coord2b < coord1b
-			(coord2b..coord1b).collect {|y| [coord1a, y]}
+  def valid?
+    return false if [@coord1, @coord2].flatten.any? {|num| num < 0 || num > 9 || !(num.is_a? Integer) }
 
-		else
-			[coord1]
-		end
-	end
+    if get_length(@coord1, @coord2) != @length
+      return false
 
-	def validate_ship
-		raise InvalidShipException if !(Ship_Validator.new(@ship_cfg).valid?)
-	end
-end
+    else
+      return true
+    end
+  end
 
-class Ship_Validator
-	def initialize(ship_cfg)
-		@valid = validate(ship_cfg)
-	end
+  private
 
-	def valid?
-		@valid
-	end
+  def get_length(coord1, coord2)
+    length_x = (coord1[0] - coord2[0]).abs
+    length_y = (coord1[1] - coord2[1]).abs
 
-	def validate(config_hash)
-		coord1 = config_hash[:coord1]
-		coord2 = config_hash[:coord2]
-		length = config_hash[:length]
+    if length_x > 0 && length_y > 0
+      false
 
-		return false if [coord1[0], coord1[1], coord2[0], coord2[1]].any? {|num| num < 0 || num > 9 || !(num.is_a? Integer) }
-
-		if get_length(coord1, coord2) != length
-			return false
-
-		else
-			return true
-		end
-	end
-
-	def get_length(coord1, coord2)
-		length_x = (coord1[0] - coord2[0]).abs
-		length_y = (coord1[1] - coord2[1]).abs
-
-		if length_x > 0 && length_y > 0
-			false
-
-		else
-			length_x > 0 ? (length_x + 1) : (length_y + 1)
-		end
-	end
+    else
+      length_x > 0 ? (length_x + 1) : (length_y + 1)
+    end
+  end
 end

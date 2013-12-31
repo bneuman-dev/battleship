@@ -1,13 +1,11 @@
-require_relative 'boards'
-require_relative 'auto_fleet_builder'
-require_relative 'human_fleet_builder'
+require_relative 'setup'
 
 class Fleet_Factory
-	attr_reader :fleet
+  attr_reader :fleet
 
-	def initialize(builder, cfg)
-		builder = builder.new(cfg)
-		builder.make_fleet
-		@fleet = Fleet.new(builder.fleet)
-	end
+  def initialize(builder)
+    builder = builder.new(SHIPS_CONF)
+    builder.make_fleet
+    @fleet = builder.fleet
+  end
 end

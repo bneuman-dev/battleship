@@ -1,84 +1,89 @@
-require_relative 'coord_translator'
+require_relative 'setup'
 
 class Human_Shot
-	attr_reader :shots
-	include CoordTranslator
+  attr_reader :shots
 
-	def initialize(combatant, name)
-		@shots_count = combatant.shots_count
-		@combatant = combatant
-		@name = name
-		@combatant.attack_grid.view_grid
-		puts "#{@name}, you have #{@shots_count} shots. Shoot"
-		@shots = make_shots
-	end
+  def initialize(player)
+    @shots_count = player.shots_count
+    @player = player
+    @name = player.name
+    @player.attack_grid.view_grid
+    puts "#{@name}, you have #{@shots_count} shots. Shoot"
+    @shots = make_shots
+  end
 
-	def make_shots
-		shots = gets.chomp
+  def make_shots
 
-		shots = process_input(shots)
+    not_shot = true
 
-		if shots.length < @shots_count && shots.length < @combatant.shots_left
-			puts "Too few shots, you have #{@shots_count} shots. Shoot again."
-	
+    while not_shot
+      shots = gets.chomp
 
-		elsif shots.length > @shots_count
-			puts "Too many shots, you only have #{@shots_count} shots. Shoot again."
+      shots = process_input(shots)
 
-		elsif shots.uniq != shots
-			puts "You can't shoot the same coordinate twice in the same volley. Shoot again."
+      if shots.length < @shots_count
+        puts "Too few shots, you have #{@shots_count} shots. Shoot again."
+    
 
-		elsif @combatant.already_shot(shots) != []
-			print "You already shot "
-			@combatant.already_shot(shots).each do |shot|
-				print "#{from_coord(shot)} "
-			end
-			print "\n"
+      elsif shots.length > @shots_count
+        puts "Too many shots, you only have #{@shots_count} shots. Shoot again."
 
-		else
-			return shots
-		end
+      elsif shots.uniq != shots
+        puts "You can't shoot the same coordinate twice in the same volley. Shoot again."
 
-		make_shots
-	end
+      elsif @player.already_shot(shots) != []
+        print "You already shot "
+        @player.already_shot(shots).each do |shot|
+          print "#{from_coord(shot)} "
+        end
+        print "\n"
 
-	def process_input(input)
-		coords = input.scan(/[A-J|a-j]10|[A-J|a-j][1-9]/)
-		coords.collect do |coord|
-			to_coord(coord)
-		end
-	end
+      else
+        not_shot = false
+      end
+    end
+    
+    shots
+  end
+
+
+  def process_input(input)
+    coords = input.scan(/[A-J|a-j]10|[A-J|a-j][1-9]/)
+    coords.collect do |coord|
+      to_coord(coord)
+    end
+  end
 end
 
 class Computer_Shot
-	attr_reader :shots
-	def initialize(combatant, name)
-		@shots_count = combatant.shots_count
-		@combatant = combatant
-		@name = name
-		@shots = make_shots
-	end
+  attr_reader :shots
+  def initialize(player)
+    @shots_count = player.shots_count
+    @player = player
+    @name = player.name
+    @shots = make_shots
+  end
 
-	def make_shots
-		shots = []
+  def make_shots
+    shots = []
 
-		@shots_count.times do
-			shot = make_shot
-			while shots.include? shot
-				shot = make_shot
-			end
-			shots.push(shot)
-		end
+    @shots_count.times do
+      shot = make_shot
+      while shots.include? shot
+        shot = make_shot
+      end
+      shots.push(shot)
+    end
 
-		if @combatant.already_shot(shots) != []
-			make_shots
+    if @player.already_shot(shots) != []
+      make_shots
 
-		else
-			shots
-		end
-	end
+    else
+      shots
+    end
+  end
 
-	def make_shot
-		[rand(9), rand(9)]
-	end
+  def make_shot
+    [rand(9), rand(9)]
+  end
 end

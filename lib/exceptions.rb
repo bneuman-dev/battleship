@@ -1,3 +1,5 @@
+require_relative 'setup'
+
 class InvalidShipException < Exception
 end
 

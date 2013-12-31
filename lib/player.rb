@@ -1,75 +1,69 @@
-require_relative 'boards'
-require_relative 'volley_results'
-
-class Combatant
-	attr_reader :fleet, :attack_grid, :name
-
-	def initialize(fleet)
-		@fleet = fleet
-		@attack_grid = Attack_Grid.new
-		@name = name
-	end
-
-	def set_enemy(enemy)
-		@enemy = enemy.fleet
-	end
-
-	def shots_count
-		@fleet.number_of_ships - @fleet.sunk
-	end
-
-	def shots_left
-		@attack_grid.shots_left
-	end
-
-	def volley(coords)
-		results = coords.collect { |coord| shoot(coord)}
-		results.each { |result| mark_result(result) }
-		results
-	end
-
-	def shoot(coord)
-		@enemy.get_shot(coord)
-	end
-
-	def mark_result(result)
-		@attack_grid.mark_result(result)
-	end
-
-	def won?
-		@attack_grid.sunk.length == @fleet.number_of_ships
-	end
-
-	def already_shot(volley)
-		volley.select { |shot| @attack_grid.already_shot(shot)}
-	end
-end
+require_relative 'setup'
 
 class Player
-	include VolleyResultsViewer
+  attr_reader :fleet, :attack_grid, :name
 
-	attr_reader :name, :combatant
-	def initialize(combatant, shot, name)
-		@combatant = combatant
-		@shot = shot
-		@name = name
-	end
+  def initialize(fleet_builder, shot, name)
+    @fleet = Fleet_Factory.new(fleet_builder).fleet
+    @shot = shot
+    @attack_grid = Grid.new
+    @name = name
+    @sunk = []
+  end
 
-	def turn
-		shots = @shot.new(@combatant, @name).shots
-		results = @combatant.volley(shots)
-		view_volley_results(results, self)
-	end
+  def turn
+    shots = @shot.new(self).shots
+    results = volley(shots)
+    view_volley_results(results)
+  end
 
-	def won?
-		@combatant.won?
-	end
+  def set_enemy(enemy)
+    @enemy = enemy.fleet
+  end
 
-	def set_enemy(enemy)
-		enemy.make_enemy(@combatant)
-	end
+  def volley(coords)
+    results = coords.collect { |coord| shoot(coord)}
+    results.each { |result| mark_result(result) }
+    results
+  end
 
-	def make_enemy(enemy_comb)
-		@combatant.set_enemy(enemy_comb)
-	end
+  def shoot(coord)
+    @enemy.shot_result(coord)
+  end
+
+  def mark_result(result)
+    @attack_grid.mark_coord(result[:coord], result[:result]) 
+    @sunk.push([result[:sunk], result[:coord]]) if result[:sunk]
+  end
+
+  def view_volley_results(results)
+    hit_miss = {"H" => "hit", "m" => "miss"}
+
+    puts "Shots by #{name}: "
+    results.each do |result|
+      puts from_coord(result[:coord]) + ":  " + hit_miss[result[:result]]
+      puts "Sunk " + result[:sunk] if result[:sunk]
+    end
+
+    puts "---------------------"
+    puts " "
+  end
+
+  def won?
+    @sunk.length == @fleet.length
+  end
+
+  def shots_count
+    shots = @fleet.length - @fleet.sunk
+    shots < shots_left ? shots : shots_left
+  end
+
+  def already_shot(volley)
+    volley.reject { |shot| @attack_grid.empty?(shot)}
+  end
+
+  private
+  def shots_left
+    @attack_grid.empty_spots
+  end
 end
