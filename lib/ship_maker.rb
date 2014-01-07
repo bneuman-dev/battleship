@@ -18,20 +18,20 @@ class Ship_Maker
 
   def make_coords
 
-    coord1x, coord1y = @coord1
-    coord2x, coord2y = @coord2
+    coord1a, coord1b = @coord1
+    coord2a, coord2b = @coord2
 
-    if coord1x < coord2x
-      (coord1x..coord2x).collect {|x| [x, coord1y]}
+    if coord1a < coord2a
+      (coord1a..coord2a).collect {|a| [a, coord1b]}
 
-    elsif coord2x < coord1x
-      (coord2x..coord1x).collect {|x| [x, coord1y]}
+    elsif coord2a < coord1a
+      (coord2a..coord1a).collect {|a| [a, coord1b]}
 
-    elsif coord1y < coord2y
-      (coord1y..coord2y).collect {|y| [coord1x, y]}
+    elsif coord1b < coord2b
+      (coord1b..coord2b).collect {|b| [coord1a, b]}
 
-    elsif coord2y < coord1y
-      (coord2y..coord1y).collect {|y| [coord1x, y]}
+    elsif coord2b < coord1b
+      (coord2b..coord1b).collect {|b| [coord1a, b]}
 
     else
       [@coord1]
@@ -41,25 +41,24 @@ class Ship_Maker
   def valid?
     return false if [@coord1, @coord2].flatten.any? {|num| num < 0 || num > 9 || !(num.is_a? Integer) }
 
-    if get_length(@coord1, @coord2) != @length
-      return false
-
-    else
-      return true
-    end
+    check_length
   end
 
   private
 
-  def get_length(coord1, coord2)
-    length_x = (coord1[0] - coord2[0]).abs
-    length_y = (coord1[1] - coord2[1]).abs
+  def check_length
+    get_length(@coord1, @coord2) == @length
+  end
 
-    if length_x > 0 && length_y > 0
+  def get_length(coord1, coord2)
+    length_a = (coord1[0] - coord2[0]).abs
+    length_b = (coord1[1] - coord2[1]).abs
+
+    if length_a > 0 && length_b > 0
       false
 
     else
-      length_x > 0 ? (length_x + 1) : (length_y + 1)
+      length_a > 0 ? (length_a + 1) : (length_b + 1)
     end
   end
 end

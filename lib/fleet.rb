@@ -9,6 +9,8 @@ class Fleet
     @sunk = 0
   end
 
+  def mark_result(result)
+    
   def shot_result(coord)
     if hit?(coord)
       @hits.push(coord)

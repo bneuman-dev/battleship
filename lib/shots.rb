@@ -1,6 +1,6 @@
 require_relative 'setup'
 
-class Human_Shot
+class HumanShotChooser
   attr_reader :shots
 
   def initialize(player)
@@ -55,7 +55,7 @@ class Human_Shot
   end
 end
 
-class Computer_Shot
+class ComputerShotChooser
   attr_reader :shots
   def initialize(player)
     @shots_count = player.shots_count

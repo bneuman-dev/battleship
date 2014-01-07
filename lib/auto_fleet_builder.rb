@@ -1,7 +1,7 @@
 require_relative 'setup'
 
-class Auto_Fleet_Builder
-  attr_reader :fleet, :config
+class AutoFleetBuilder
+  attr_reader :fleet
 
   def initialize(cfg)
     @config = parse_config(cfg)

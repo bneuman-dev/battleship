@@ -31,22 +31,19 @@ class Grid
   end
 
   def view_grid
-    letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
-    print "       A    B    C    D    E    F    G    H    I    J\n"
-    
-    (1..9).each do |line_num|
-      print "#{line_num}      "
+    print "       1    2    3    4    5    6    7    8    9    10\n"
+    print "     " + "-" * 49 + "\n"
+    (1..10).each do |line_num|
+      
       print_line(line_num)
       print "     " + "-" * 49 + "\n"
     end
-
-    print "10     "
-    print_line(10)
-    print "     " + "-" * 49 + "\n"
   end
 
   def print_line(line_num)
-    @grid.each {|column| print "#{column[line_num - 1]} |  "}
+    letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+    print "#{letters[line_num - 1]}      "
+    @grid[line_num - 1].each {|point| print "#{point} |  "}
     print "\n"
   end
 end

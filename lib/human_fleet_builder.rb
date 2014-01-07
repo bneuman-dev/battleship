@@ -1,6 +1,6 @@
 require_relative 'setup'
 
-class Human_Fleet_Builder
+class HumanFleetBuilder
 
   attr_reader :fleet
   def initialize(ships_cfg)
@@ -72,10 +72,6 @@ class Human_Fleet_Builder
   
   end
 
-  def done?
-    @ships_cfg.all? {|ship| ship[:quantity] == 0}
-  end
-
   def parse_done
     unless done?
       puts "You are not done yet!"
@@ -84,6 +80,10 @@ class Human_Fleet_Builder
     else
       puts "Fleet created."
     end
+  end
+
+  def done?
+    @ships_cfg.all? {|ship| ship[:quantity] == 0}
   end
 
   def parse_add(input)
@@ -137,10 +137,10 @@ class Human_Fleet_Builder
   end
 
   def place_ship(ship_cfg, number = nil)
-    ship_cfg[:coord1], ship_cfg[:coord2] = get_coordinates
+    coord1, coord2 = get_coordinates
 
     begin
-      ship = @fleet.create_ship(ship_cfg) 
+      ship = @fleet.create_ship({name: ship_cfg[:name], length: ship_cfg[:length], coord1: coord1, coord2: coord2}) 
 
     rescue InvalidShipException
       puts "Those coordinates are invalid. Re-enter coords."

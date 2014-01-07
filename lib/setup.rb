@@ -10,20 +10,21 @@ require_relative 'player'
 require_relative 'ship_maker'
 require_relative 'shots'
 
-SHIPS_CONF = 
+def ships_conf
  [{name: 'Carrier', length: 5, quantity: 1},
              {name: 'Battleship', length: 4, quantity: 1},
              {name: 'Cruiser', length: 3, quantity: 1},
              {name: 'Destroyer', length: 2, quantity: 2},
              {name: 'Submarine', length: 1, quantity: 2},
             ]
+end
 
 class Game_Setup
   attr_reader :game
 
   def initialize(human_name, computer_name)
-    @player1 = Player.new(Auto_Fleet_Builder, Human_Shot, human_name)
-    @player2 = Player.new(Auto_Fleet_Builder, Computer_Shot, computer_name)
+    @player1 = Player.new(HumanFleetBuilder, HumanShotChooser, human_name)
+    @player2 = Player.new(AutoFleetBuilder, ComputerShotChooser, computer_name)
     @player1.set_enemy(@player2)
     @player2.set_enemy(@player1)
     @game = Game.new(@player1, @player2)
