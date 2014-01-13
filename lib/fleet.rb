@@ -9,7 +9,7 @@ class Fleet
     @sunk = 0
   end
 
-  def mark_result(result)
+#  def mark_result(result)
     
   def shot_result(coord)
     if hit?(coord)
@@ -24,8 +24,10 @@ class Fleet
   end
 
   def create_ship(ship_cfg)
+    p ship_cfg
     ship = Ship_Maker.new(ship_cfg).ship
-    if ship.coords.any? {|coord| coords.include? coord}
+
+    if ship.coords.any? {|coord| occupied_coords.include? coord}
       raise BadShipCoordsException 
 
     else
@@ -46,8 +48,8 @@ class Fleet
     @ships.delete(ship)
   end
 
-  def coords
-    @ships.collect {|ship| ship.coords}.flatten(1)
+  def occupied_coords
+    @ships.collect {|ship| ship.coords}.flatten
   end
   
   def length
@@ -65,7 +67,7 @@ class Fleet
   private
 
   def hit?(coord)
-    coords.include? coord
+    occupied_coords.include? coord
   end
 
   def sunk?(coord)

@@ -23,7 +23,7 @@ class Game_Setup
   attr_reader :game
 
   def initialize(human_name, computer_name)
-    @player1 = Player.new(HumanFleetBuilder, HumanShotChooser, human_name)
+    @player1 = Player.new(AutoFleetBuilder, HumanShotChooser, human_name)
     @player2 = Player.new(AutoFleetBuilder, ComputerShotChooser, computer_name)
     @player1.set_enemy(@player2)
     @player2.set_enemy(@player1)

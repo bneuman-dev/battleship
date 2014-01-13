@@ -138,12 +138,13 @@ class HumanFleetBuilder
 
   def place_ship(ship_cfg, number = nil)
     coord1, coord2 = get_coordinates
-
+    p coord1
+    p coord2
     begin
       ship = @fleet.create_ship({name: ship_cfg[:name], length: ship_cfg[:length], coord1: coord1, coord2: coord2}) 
 
-    rescue InvalidShipException
-      puts "Those coordinates are invalid. Re-enter coords."
+    rescue InvalidShipException => e
+      puts "#{e.message}. Re-enter coords."
       place_ship(ship_cfg, number)
       
     rescue BadShipCoordsException

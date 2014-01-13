@@ -84,6 +84,6 @@ class ComputerShotChooser
   end
 
   def make_shot
-    [rand(9), rand(9)]
+    rand(80)
   end
 end

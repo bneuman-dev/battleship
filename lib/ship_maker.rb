@@ -10,55 +10,39 @@ class Ship_Maker
     @coord1 = ship_cfg[:coord1]
     @coord2 = ship_cfg[:coord2]
     @length = ship_cfg[:length]
-
-    raise InvalidShipException if !valid?
     coords = make_coords
     @ship = Ship.new(@ship_cfg[:name], @ship_cfg[:length], coords)
   end
 
   def make_coords
-
-    coord1a, coord1b = @coord1
-    coord2a, coord2b = @coord2
-
-    if coord1a < coord2a
-      (coord1a..coord2a).collect {|a| [a, coord1b]}
-
-    elsif coord2a < coord1a
-      (coord2a..coord1a).collect {|a| [a, coord1b]}
-
-    elsif coord1b < coord2b
-      (coord1b..coord2b).collect {|b| [coord1a, b]}
-
-    elsif coord2b < coord1b
-      (coord2b..coord1b).collect {|b| [coord1a, b]}
-
-    else
-      [@coord1]
-    end
+    coord_range = get_coords_alignment
+    start_index, end_index = get_indices(coord_range)
+    check_length(start_index, end_index)
+    coord_range[start_index..end_index]
   end
 
-  def valid?
-    return false if [@coord1, @coord2].flatten.any? {|num| num < 0 || num > 9 || !(num.is_a? Integer) }
+  def get_coords_alignment
+    coord1_row = ROWS.find { |row| row.include? @coord1 }
+    coord1_column = COLUMNS.find { |column| column.include? @coord1 }
 
-    check_length
+    coord2_in_row = coord1_row.include? @coord2
+    coord2_in_column = coord1_column.include? @coord2
+
+    raise InvalidShipException.new("Weird alignment") if !(coord2_in_row) && !(coord2_in_column)
+
+    coord2_in_row ? coord1_row : coord1_column
+  end
+
+  def get_indices(coord_range)
+    start_index = coord_range.index(@coord1)
+    end_index = coord_range.index(@coord2)
+    start_index < end_index ? [start_index, end_index] : [end_index, start_index]
   end
 
   private
 
-  def check_length
-    get_length(@coord1, @coord2) == @length
-  end
-
-  def get_length(coord1, coord2)
-    length_a = (coord1[0] - coord2[0]).abs
-    length_b = (coord1[1] - coord2[1]).abs
-
-    if length_a > 0 && length_b > 0
-      false
-
-    else
-      length_a > 0 ? (length_a + 1) : (length_b + 1)
-    end
+  def check_length(start_index, end_index)
+    length = (end_index - start_index).abs + 1
+    raise InvalidShipException.new("Bad length") if length != @length
   end
 end

@@ -39,28 +39,16 @@ class AutoFleetBuilder
   end
 
   def make_coords(length)
-    coord1 = [rand(9), rand(9)]
+    coord1 = rand(80)
     coord2 = calculate_second_coord(coord1, length)
     [coord1, coord2]
   end
 
   def calculate_second_coord(coord1, length)
-    direction = rand(3)
-  
-    case direction
-
-    when 0
-      [coord1[0] + (length - 1), coord1[1]]
-
-    when 1
-      [coord1[0], coord1[1] + (length - 1)]
-
-    when 2
-      [coord1[0] - (length - 1), coord1[1]]
-
-    when 3
-      [coord1[0], coord1[1] - (length - 1)]
-    end
+    orientation = rand(1) == 0 ? ROWS : COLUMNS
+    range = orientation.find { |line| line.include? coord1 }
+    coord1_index = range.index(coord1)
+    coord2_index = rand(1) == 0 ? coord1_index + (length - 1) : coord1_index - (length - 1)
+    range[coord2_index]
   end
-
 end
