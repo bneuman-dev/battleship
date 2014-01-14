@@ -96,7 +96,7 @@ class HumanFleetBuilder
     elsif ship_cfg[:quantity] == 0
       puts "You have already added all your #{ship_cfg[:name]}s"
 
-    else
+    elses
       new_ship(ship_cfg)
       @grid.view_grid
       needed_ships
@@ -106,7 +106,7 @@ class HumanFleetBuilder
   def parse_edit(input)
     ship_number = input.gsub('edit', '').gsub(' ', '')
 
-    if ! ((1..@fleet.length).to_a.include? ship_number.to_i)
+    if !((1..@fleet.length).to_a.include? ship_number.to_i)
       puts "Can't find a #{ship_number} to edit"
     
     else
@@ -122,7 +122,7 @@ class HumanFleetBuilder
     puts "E.g., a6 d6"
     ship = place_ship(ship_cfg)
     number = @fleet.ship_number(ship)
-    @grid.mark_coords(ship.coords, number)
+    mark_coords(ship.coords, number)
     ship_cfg[:quantity] -= 1
   end
 
@@ -130,16 +130,15 @@ class HumanFleetBuilder
     ship_to_edit = @fleet.delete_ship(@fleet.get_ship_by_number(number))
     puts "Editing #{ship_to_edit[:name]} of length #{ship_to_edit[:length]}."
     puts "Enter new start and end coordinates."
-    @grid.mark_coords(ship_to_edit.coords, ' ')
+    mark_coords(ship_to_edit.coords, ' ')
     ship_cfg = {name: ship_to_edit.name, length: ship_to_edit.length}
     edited_ship = place_ship(ship_cfg, number) 
-    @grid.mark_coords(edited_ship.coords, number)
+    mark_coords(edited_ship.coords, number)
   end
 
   def place_ship(ship_cfg, number = nil)
     coord1, coord2 = get_coordinates
-    p coord1
-    p coord2
+ 
     begin
       ship = @fleet.create_ship({name: ship_cfg[:name], length: ship_cfg[:length], coord1: coord1, coord2: coord2}) 
 
@@ -166,6 +165,12 @@ class HumanFleetBuilder
 
     else
       return [to_coord(coords[0]), to_coord(coords[1])]
+    end
+  end
+
+  def mark_coords(coords, marking)
+    coords.each do |coord|
+      @grid.mark_coord(coord, marking)
     end
   end
 end

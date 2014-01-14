@@ -45,10 +45,6 @@ class AutoFleetBuilder
   end
 
   def calculate_second_coord(coord1, length)
-    orientation = rand(1) == 0 ? ROWS : COLUMNS
-    range = orientation.find { |line| line.include? coord1 }
-    coord1_index = range.index(coord1)
-    coord2_index = rand(1) == 0 ? coord1_index + (length - 1) : coord1_index - (length - 1)
-    range[coord2_index]
+    rand(1) == 0 ? coord1 + (length - 1) : coord1 + (length * 10 - 1)
   end
 end

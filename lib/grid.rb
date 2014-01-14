@@ -48,12 +48,6 @@ class Grid
     @grid = Array.new(100, ' ')
   end
 
-  def mark_coords(coords, marking)
-    coords.each do |coord|
-      mark_coord(coord, marking)
-    end
-  end
-
   def mark_coord(coord, marking)
     @grid[coord] = marking
   end
@@ -67,7 +61,7 @@ class Grid
   end
 
   def empty_spots
-    @grid.count {|point| point == ' '}
+    @grid.count { |point| point == ' ' }
   end
   
   def view_grid

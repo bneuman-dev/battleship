@@ -24,8 +24,8 @@ class Fleet
   end
 
   def create_ship(ship_cfg)
-    p ship_cfg
-    ship = Ship_Maker.new(ship_cfg).ship
+    #p ship_cfg
+    ship = ShipMaker.new(ship_cfg).ship
 
     if ship.coords.any? {|coord| occupied_coords.include? coord}
       raise BadShipCoordsException 
