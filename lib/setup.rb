@@ -10,7 +10,16 @@ require_relative 'player'
 require_relative 'ship_maker'
 require_relative 'shots'
 
+# TODO consider structs
+# Struct.new('Ship', 'name', 'carrier', 'quantity')
+# TODO, make this a constant
 def ships_conf
+  # Ruby Idiom, two space soft-tabs, and formatting
+  # [
+    # {name: 'Carrier', length: 5, quantity: 1},
+    # {}
+    # ....
+  # ]
  [{name: 'Carrier', length: 5, quantity: 1},
              {name: 'Battleship', length: 4, quantity: 1},
              {name: 'Cruiser', length: 3, quantity: 1},

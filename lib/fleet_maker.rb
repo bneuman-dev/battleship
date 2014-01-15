@@ -1,5 +1,6 @@
 require_relative 'ship_maker'
 
+# TODO retire the Fleet Maker
 module Fleet_Maker
 	attr_reader :fleet
 
